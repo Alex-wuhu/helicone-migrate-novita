@@ -5,6 +5,18 @@ You are helping a developer migrate their codebase from Helicone (an LLM proxy/g
 Apply all changes described in this document to the target codebase automatically.
 Do not ask for confirmation on changes that are unambiguous. Report a summary when done.
 
+## CRITICAL NOTE — Model Names Also Change
+
+Novita model identifiers are different from provider-native names.
+Example:
+
+```
+FIND:    gpt-5.2-codex
+REPLACE: pa/gpt-5.2-codex
+```
+
+Do not stop after API key and base URL replacements. Always migrate model names as part of this task.
+
 ---
 
 ## STEP 1 — Replace Base URL
@@ -13,7 +25,7 @@ Find all occurrences of the Helicone gateway URL and replace with the Novita end
 
 ```
 FIND:    https://ai-gateway.helicone.ai
-REPLACE: https://api.novita.ai/openai
+REPLACE: https://api.novita.ai/openai/v1
 ```
 
 This applies to any language or configuration file: Python, TypeScript, JavaScript, .env, YAML, JSON, etc.
@@ -35,21 +47,25 @@ Apply to: `.env`, `.env.example`, shell scripts, CI/CD config, Docker files, REA
 **Python**
 ```python
 # BEFORE
-OpenAI(api_key=os.environ["HELICONE_API_KEY"], base_url="https://ai-gateway.helicone.ai")
-OpenAI(api_key=os.getenv("HELICONE_API_KEY"), base_url="https://ai-gateway.helicone.ai")
+client = OpenAI(api_key=os.environ["HELICONE_API_KEY"], base_url="https://ai-gateway.helicone.ai")
+client = OpenAI(api_key=os.getenv("HELICONE_API_KEY"), base_url="https://ai-gateway.helicone.ai")
+client.responses.create(model="gpt-5.2-codex", input="Hello")
 
 # AFTER
-OpenAI(api_key=os.environ["NOVITA_API_KEY"], base_url="https://api.novita.ai/openai")
-OpenAI(api_key=os.getenv("NOVITA_API_KEY"), base_url="https://api.novita.ai/openai")
+client = OpenAI(api_key=os.environ["NOVITA_API_KEY"], base_url="https://api.novita.ai/openai/v1")
+client = OpenAI(api_key=os.getenv("NOVITA_API_KEY"), base_url="https://api.novita.ai/openai/v1")
+client.responses.create(model="pa/gpt-5.2-codex", input="Hello")
 ```
 
 **TypeScript / JavaScript**
 ```typescript
 // BEFORE
-new OpenAI({ apiKey: process.env.HELICONE_API_KEY, baseURL: "https://ai-gateway.helicone.ai" })
+const client = new OpenAI({ apiKey: process.env.HELICONE_API_KEY, baseURL: "https://ai-gateway.helicone.ai" })
+await client.responses.create({ model: "gpt-5.2-codex", input: "Hello" })
 
 // AFTER
-new OpenAI({ apiKey: process.env.NOVITA_API_KEY, baseURL: "https://api.novita.ai/openai" })
+const client = new OpenAI({ apiKey: process.env.NOVITA_API_KEY, baseURL: "https://api.novita.ai/openai/v1" })
+await client.responses.create({ model: "pa/gpt-5.2-codex", input: "Hello" })
 ```
 
 **HTTP headers**
@@ -196,7 +212,7 @@ Report any model names found in the codebase that do NOT appear in the mapping t
 
 ## REFERENCE
 
-- Novita API Base URL: `https://api.novita.ai/openai`
+- Novita API Base URL: `https://api.novita.ai/openai/v1`
 - API Key management: https://novita.ai/settings/key-management
 - API is fully OpenAI-compatible (same request/response format, streaming supported)
 - Anthropic prompt caching is supported via `cache_control: { type: "ephemeral" }` in message content
